@@ -1,11 +1,11 @@
 ;;; supreme-brackets.el --- Smart bracket insertion and wrapping -*- lexical-binding: t; coding: utf-8 -*-
 
 ;; Author: Javier Miranda
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Keywords: convenience, editing, brackets
 ;; URL: https://github.com/J4VMC/supreme-brackets
 ;; Package-Name: supreme-brackets
-;; Package-Version: 1.0.0
+;; Package-Version: 1.1.0
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 ;; Package-Requires: ((emacs "25.1"))
 
@@ -138,6 +138,7 @@ TypeScript, JavaScript, Go, Rust, SQL, and many others."
      ((use-region-p)
       (setq beg (region-beginning)
 	    end (region-end))
+      (deactivate-mark) ;; FIX: Avoid visual region shift
       (goto-char end)
       (insert close-bracket)
       (goto-char beg)
@@ -199,234 +200,164 @@ TypeScript, JavaScript, Go, Rust, SQL, and many others."
     (when offset
       (goto-char (+ beg offset)))))
 
+
+;;; Generator Macro
+
+(defmacro supreme-brackets-define-insert (name doc open close)
+  "Generate an interactive function NAME to insert or wrap OPEN and CLOSE brackets.
+DOC is the documentation string for the function."
+  `(progn
+     ;;;###autoload
+     (defun ,name ()
+       ,doc
+       (interactive)
+       (supreme-brackets-wrap-with-brackets ,open ,close))))
+
+
 ;;; Interactive Commands - Basic ASCII Brackets
 
-;;;###autoload
-(defun supreme-brackets-insert-parentheses ()
-  "Insert or wrap with parentheses ().
-Great for function calls in Python, JavaScript, PHP, Go, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "(" ")"))
+(supreme-brackets-define-insert supreme-brackets-insert-parentheses
+				"Insert or wrap with parentheses ().\nGreat for function calls in Python, JavaScript, PHP, Go, etc."
+				"(" ")")
 
-;;;###autoload
-(defun supreme-brackets-insert-square-brackets ()
-  "Insert or wrap with square brackets [].
-Perfect for array/list indexing in Python, PHP, JavaScript, TypeScript, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "[" "]"))
+(supreme-brackets-define-insert supreme-brackets-insert-square-brackets
+				"Insert or wrap with square brackets [].\nPerfect for array/list indexing in Python, PHP, JavaScript, TypeScript, etc."
+				"[" "]")
 
-;;;###autoload
-(defun supreme-brackets-insert-curly-braces ()
-  "Insert or wrap with curly braces {}.
-Essential for blocks in C, C++, Java, JavaScript,
-TypeScript, Go, Rust, PHP, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "{" "}"))
+(supreme-brackets-define-insert supreme-brackets-insert-curly-braces
+				"Insert or wrap with curly braces {}.\nEssential for blocks in C, C++, Java, JavaScript, TypeScript, Go, Rust, PHP, etc."
+				"{" "}")
 
-;;;###autoload
-(defun supreme-brackets-insert-angle-brackets ()
-  "Insert or wrap with angle brackets <>.
-Useful for generics in TypeScript, Java, C++, Rust, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "<" ">"))
+(supreme-brackets-define-insert supreme-brackets-insert-angle-brackets
+				"Insert or wrap with angle brackets <>.\nUseful for generics in TypeScript, Java, C++, Rust, etc."
+				"<" ">")
+
 
 ;;; Interactive Commands - Quotes (Essential for all languages)
 
-;;;###autoload
-(defun supreme-brackets-insert-double-quotes ()
-  "Insert or wrap with double quotes \"\".
-Standard string delimiter in most languages: Python, JavaScript, PHP, Go, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "\"" "\""))
+(supreme-brackets-define-insert supreme-brackets-insert-double-quotes
+				"Insert or wrap with double quotes \"\".\nStandard string delimiter in most languages: Python, JavaScript, PHP, Go, etc."
+				"\"" "\"")
 
-;;;###autoload
-(defun supreme-brackets-insert-single-quotes ()
-  "Insert or wrap with single quotes ''.
-String delimiter in Python, JavaScript, SQL, PHP, etc."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "'" "'"))
+(supreme-brackets-define-insert supreme-brackets-insert-single-quotes
+				"Insert or wrap with single quotes ''.\nString delimiter in Python, JavaScript, SQL, PHP, etc."
+				"'" "'")
 
-;;;###autoload
-(defun supreme-brackets-insert-backticks ()
-  "Insert or wrap with backticks ``.
-Template literals in JavaScript/TypeScript, command
-substitution in shell scripts."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "`"))
+(supreme-brackets-define-insert supreme-brackets-insert-backticks
+				"Insert or wrap with backticks ``.\nTemplate literals in JavaScript/TypeScript, command substitution in shell scripts."
+				"`" "`")
 
-;;;###autoload
-(defun supreme-brackets-insert-emacs-quotes ()
-  "Insert or wrap with Emacs-style quotes `'.
-For documentation and quoting in Elisp."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "'"))
+(supreme-brackets-define-insert supreme-brackets-insert-emacs-quotes
+				"Insert or wrap with Emacs-style quotes `'.\nFor documentation and quoting in Elisp."
+				"`" "'")
+
 
 ;;; Interactive Commands - Markdown
 
-;;;###autoload
-(defun supreme-brackets-insert-markdown-code-inline ()
-  "Insert or wrap with single backticks for inline code.
-Standard Markdown inline code syntax."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "`"))
+(supreme-brackets-define-insert supreme-brackets-insert-markdown-code-inline
+				"Insert or wrap with single backticks for inline code.\nStandard Markdown inline code syntax."
+				"`" "`")
 
-;;;###autoload
-(defun supreme-brackets-insert-markdown-code-block ()
-  "Insert or wrap with Markdown triple backticks.
-Creates a code block in Markdown, perfect for documentation."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "```\n" "\n```"))
+(supreme-brackets-define-insert supreme-brackets-insert-markdown-code-block
+				"Insert or wrap with Markdown triple backticks.\nCreates a code block in Markdown, perfect for documentation."
+				"```\n" "\n```")
 
-;;;###autoload
-(defun supreme-brackets-insert-python-docstring ()
-  "Insert or wrap with Python triple double-quotes.
-Standard Python docstring format."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "\"\"\"" "\"\"\""))
+(supreme-brackets-define-insert supreme-brackets-insert-python-docstring
+				"Insert or wrap with Python triple double-quotes.\nStandard Python docstring format."
+				"\"\"\"" "\"\"\"")
 
-;;;###autoload
-(defun supreme-brackets-insert-python-triple-single-quotes ()
-  "Insert or wrap with Python triple single-quotes.
-Alternative Python string/docstring format."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "'''" "'''"))
+(supreme-brackets-define-insert supreme-brackets-insert-python-triple-single-quotes
+				"Insert or wrap with Python triple single-quotes.\nAlternative Python string/docstring format."
+				"'''" "'''")
+
 
 ;;; Interactive Commands - Language-Specific
 
-;;;###autoload
-(defun supreme-brackets-insert-template-literal ()
-  "Insert or wrap with JavaScript/TypeScript template literal syntax.
-Uses backticks with ${} placeholders."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "`"))
+(supreme-brackets-define-insert supreme-brackets-insert-template-literal
+				"Insert or wrap with JavaScript/TypeScript template literal syntax.\nUses backticks with ${} placeholders."
+				"`" "`")
 
-;;;###autoload
-(defun supreme-brackets-insert-rust-raw-string ()
-  "Insert or wrap with Rust raw string syntax r#\"...\"#."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "r#\"" "\"#"))
+(supreme-brackets-define-insert supreme-brackets-insert-rust-raw-string
+				"Insert or wrap with Rust raw string syntax r#\"...\"#."
+				"r#\"" "\"#")
 
-;;;###autoload
-(defun supreme-brackets-insert-go-raw-string ()
-  "Insert or wrap with Go raw string literal (backticks).
-Multi-line strings in Go."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "`"))
+(supreme-brackets-define-insert supreme-brackets-insert-go-raw-string
+				"Insert or wrap with Go raw string literal (backticks).\nMulti-line strings in Go."
+				"`" "`")
 
-;;;###autoload
-(defun supreme-brackets-insert-sql-identifier ()
-  "Insert or wrap with SQL identifier quotes (backticks).
-For MySQL column/table names with special characters."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "`" "`"))
+(supreme-brackets-define-insert supreme-brackets-insert-sql-identifier
+				"Insert or wrap with SQL identifier quotes (backticks).\nFor MySQL column/table names with special characters."
+				"`" "`")
 
-;;;###autoload
-(defun supreme-brackets-insert-postgres-identifier ()
-  "Insert or wrap with PostgreSQL identifier quotes.
-For PostgreSQL case-sensitive or special identifiers."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "\"" "\""))
+(supreme-brackets-define-insert supreme-brackets-insert-postgres-identifier
+				"Insert or wrap with PostgreSQL identifier quotes.\nFor PostgreSQL case-sensitive or special identifiers."
+				"\"" "\"")
 
-;;;###autoload
-(defun supreme-brackets-insert-php-variable ()
-  "Insert $ and wrap for PHP variable.
-Useful for quickly creating PHP variables."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "$" ""))
+(supreme-brackets-define-insert supreme-brackets-insert-php-variable
+				"Insert $ and wrap for PHP variable.\nUseful for quickly creating PHP variables."
+				"$" "")
+
 
 ;;; Interactive Commands - Curly/Smart Quotes
 
-;;;###autoload
-(defun supreme-brackets-insert-curly-double-quotes ()
-  "Insert or wrap with curly double quotes “”.
-Typographically correct quotes for prose."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "“" "”"))
+(supreme-brackets-define-insert supreme-brackets-insert-curly-double-quotes
+				"Insert or wrap with curly double quotes “”.\nTypographically correct quotes for prose."
+				"“" "”")
 
-;;;###autoload
-(defun supreme-brackets-insert-curly-single-quotes ()
-  "Insert or wrap with curly single quotes ‘’.
-Typographically correct single quotes."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "‘" "’"))
+(supreme-brackets-define-insert supreme-brackets-insert-curly-single-quotes
+				"Insert or wrap with curly single quotes ‘’.\nTypographically correct single quotes."
+				"‘" "’")
 
-;;;###autoload
-(defun supreme-brackets-insert-single-guillemets ()
-  "Insert or wrap with single guillemets ‹›.
-European quotation marks."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "‹" "›"))
+(supreme-brackets-define-insert supreme-brackets-insert-single-guillemets
+				"Insert or wrap with single guillemets ‹›.\nEuropean quotation marks."
+				"‹" "›")
 
-;;;###autoload
-(defun supreme-brackets-insert-double-guillemets ()
-  "Insert or wrap with double guillemets «».
-French/European quotation marks."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "«" "»"))
+(supreme-brackets-define-insert supreme-brackets-insert-double-guillemets
+				"Insert or wrap with double guillemets «».\nFrench/European quotation marks."
+				"«" "»")
+
 
 ;;; Interactive Commands - CJK Brackets
 
-;;;###autoload
-(defun supreme-brackets-insert-corner-brackets ()
-  "Insert or wrap with corner brackets 「」.
-Japanese quotation marks."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "「" "」"))
+(supreme-brackets-define-insert supreme-brackets-insert-corner-brackets
+				"Insert or wrap with corner brackets 「」.\nJapanese quotation marks."
+				"「" "」")
 
-;;;###autoload
-(defun supreme-brackets-insert-white-corner-brackets ()
-  "Insert or wrap with white corner brackets 『』.
-Japanese emphasis quotation marks."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "『" "』"))
+(supreme-brackets-define-insert supreme-brackets-insert-white-corner-brackets
+				"Insert or wrap with white corner brackets 『』.\nJapanese emphasis quotation marks."
+				"『" "』")
 
-;;;###autoload
-(defun supreme-brackets-insert-cjk-angle-brackets ()
-  "Insert or wrap with CJK angle brackets 〈〉.
-Chinese/Japanese angle brackets."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "〈" "〉"))
+(supreme-brackets-define-insert supreme-brackets-insert-cjk-angle-brackets
+				"Insert or wrap with CJK angle brackets 〈〉.\nChinese/Japanese angle brackets."
+				"〈" "〉")
 
-;;;###autoload
-(defun supreme-brackets-insert-cjk-double-angle-brackets ()
-  "Insert or wrap with CJK double angle brackets 《》.
-Chinese book title marks."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "《" "》"))
+(supreme-brackets-define-insert supreme-brackets-insert-cjk-double-angle-brackets
+				"Insert or wrap with CJK double angle brackets 《》.\nChinese book title marks."
+				"《" "》")
 
-;;;###autoload
-(defun supreme-brackets-insert-white-lenticular-brackets ()
-  "Insert or wrap with white lenticular brackets 〖〗."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "〖" "〗"))
+(supreme-brackets-define-insert supreme-brackets-insert-white-lenticular-brackets
+				"Insert or wrap with white lenticular brackets 〖〗."
+				"〖" "〗")
 
-;;;###autoload
-(defun supreme-brackets-insert-black-lenticular-brackets ()
-  "Insert or wrap with black lenticular brackets 【】.
-Chinese emphasis brackets."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "【" "】"))
+(supreme-brackets-define-insert supreme-brackets-insert-black-lenticular-brackets
+				"Insert or wrap with black lenticular brackets 【】.\nChinese emphasis brackets."
+				"【" "】")
 
-;;;###autoload
-(defun supreme-brackets-insert-tortoise-shell-brackets ()
-  "Insert or wrap with tortoise shell brackets 〔〕.
-Chinese annotation brackets."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "〔" "〕"))
+(supreme-brackets-define-insert supreme-brackets-insert-tortoise-shell-brackets
+				"Insert or wrap with tortoise shell brackets 〔〕.\nChinese annotation brackets."
+				"〔" "〕")
+
 
 ;;; Interactive Commands - Decorative Brackets
 
-;;;###autoload
-(defun supreme-brackets-insert-heavy-angle-brackets ()
-  "Insert or wrap with heavy angle quotation mark ❮❯."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "❮" "❯"))
+(supreme-brackets-define-insert supreme-brackets-insert-heavy-angle-brackets
+				"Insert or wrap with heavy angle quotation mark ❮❯."
+				"❮" "❯")
 
-;;;###autoload
-(defun supreme-brackets-insert-heavy-angle-ornament-brackets ()
-  "Insert or wrap with heavy angle ornament brackets ❰❱."
-  (interactive)
-  (supreme-brackets-wrap-with-brackets "❰" "❱"))
+(supreme-brackets-define-insert supreme-brackets-insert-heavy-angle-ornament-brackets
+				"Insert or wrap with heavy angle ornament brackets ❰❱."
+				"❰" "❱")
+
 
 ;;; Line and Block Wrapping Commands
 
@@ -522,9 +453,6 @@ This command ignores nesting."
     (skip-chars-backward delimiter-chars)
     (push-mark (point) t t)
     ;; 2. Go forward until we hit a delimiter
-    ;;    (Use substring to remove the '^' from the char set)
-    ;; --- FIX ---  <-- This was the stray comment I mentioned
-    ;; Use the full 'delimiter-chars' string to skip NON-delimiters
     (skip-chars-forward delimiter-chars)))
 
 
@@ -535,7 +463,7 @@ This command ignores nesting."
   "Delete matching brackets to the right of point.
 
 If PAIRS-ONLY-P is nil (default), delete the brackets and the
-text inside (kills the whole S-expression).
+text inside.
 If PAIRS-ONLY-P is non-nil, delete only the surrounding brackets.
 
 Assumes point is just before an opening bracket or quote."
@@ -548,10 +476,10 @@ Assumes point is just before an opening bracket or quote."
 	(push-mark (point) t)
 	(goto-char start-point)
 	(delete-char 1))
-    ;; Delete entire sexp
+    ;; Delete entire sexp (FIX: Use delete-region to avoid kill-ring pollution)
     (progn
       (mark-sexp)
-      (kill-region (region-beginning) (region-end)))))
+      (delete-region (region-beginning) (region-end)))))
 
 ;;;###autoload
 (defun supreme-brackets-delete-backward-sexp ()
@@ -561,7 +489,7 @@ Assumes point is just after a closing bracket or quote."
   (progn
     (forward-sexp -1)
     (mark-sexp)
-    (kill-region (region-beginning) (region-end))))
+    (delete-region (region-beginning) (region-end))))
 
 ;;;###autoload
 (defun supreme-brackets-delete-backward-pairs ()
@@ -596,17 +524,17 @@ When called from Lisp, pass non-nil ARG to delete only brackets."
   (interactive "P")
   (if (and delete-selection-mode (region-active-p))
       (delete-region (region-beginning) (region-end))
-    ;; --- FIX: Use (char-before) for robust checking ---
-    (let ((char-before (and (> (point) (point-min)) (char-before))))
+    ;; FIX: rename local var to avoid shadowing function `char-before`
+    (let ((prev-char (and (> (point) (point-min)) (char-before))))
       (cond
        ;; Case 1: Point is after a closing bracket. e.g. (a)▮
-       ((and char-before (string-match-p (regexp-opt supreme-brackets-nav-right-brackets) (string char-before)))
-	(if arg ; <-- Changed from prefix-arg to arg
+       ((and prev-char (string-match-p (regexp-opt supreme-brackets-nav-right-brackets) (string prev-char)))
+	(if arg
 	    (supreme-brackets-delete-backward-pairs)
 	  (supreme-brackets-delete-backward-sexp)))
 
        ;; Case 2: Point is after an opening bracket. e.g. (▮a)
-       ((and char-before (string-match-p (regexp-opt supreme-brackets-nav-left-brackets) (string char-before)))
+       ((and prev-char (string-match-p (regexp-opt supreme-brackets-nav-left-brackets) (string prev-char)))
 	(let (start-point
 	      (end-point (point))
 	      is-comment)
@@ -619,25 +547,25 @@ When called from Lisp, pass non-nil ARG to delete only brackets."
 	      (progn
 		(goto-char start-point)
 		(if (forward-comment 1)
-		    (kill-region (point) start-point)
+		    (delete-region (point) start-point)
 		  (message "Error: Failed to parse comment.")))
 	    (progn
 	      (goto-char start-point) ; Go to just before opening bracket
 	      (forward-sexp) ; Move to end of sexp (a)▮
 	      ;; Point is at end, so we call backward delete
-	      (if arg ; <-- Changed from prefix-arg to arg
+	      (if arg
 		  (supreme-brackets-delete-backward-pairs)
 		(supreme-brackets-delete-backward-sexp))))))
 
        ;; Case 3: Point is after a quote. e.g. "a"▮ or ▮"a"
-       ((and char-before (string-match-p "[\"']" (string char-before)))
+       ((and prev-char (string-match-p "[\"']" (string prev-char)))
 	(if (nth 3 (syntax-ppss)) ; Inside a string? e.g. "a▮"
 	    (progn
 	      (backward-char) ; Move to ▮"a"
 	      ;; With prefix, delete pairs only.
-	      (supreme-brackets-delete-forward-sexp-or-pairs arg)) ; <-- Changed from prefix-arg to arg
+	      (supreme-brackets-delete-forward-sexp-or-pairs arg))
 	  ;; Not in a string. e.g. "a"▮
-	  (if arg ; <-- Changed from prefix-arg to arg
+	  (if arg
 	      (supreme-brackets-delete-backward-pairs)
 	    (supreme-brackets-delete-backward-sexp))))
 
@@ -706,8 +634,9 @@ If TO-CHARS is \"none...\", the brackets are replaced with empty strings."
   (interactive
    (let ((completion-ignore-case t))
      (list
-      (completing-read "Replace this:" supreme-brackets--change-bracket-pairs-list nil t nil nil (car supreme-brackets--change-bracket-pairs-list))
-      (completing-read "To:" supreme-brackets--change-bracket-pairs-list nil t nil nil (car (last supreme-brackets--change-bracket-pairs-list))))))
+      ;; FIX: Corrected variable name referencing `supreme-brackets-replace--change-bracket-pairs-list`
+      (completing-read "Replace this:" supreme-brackets-replace--change-bracket-pairs-list nil t nil nil (car supreme-brackets-replace--change-bracket-pairs-list))
+      (completing-read "To:" supreme-brackets-replace--change-bracket-pairs-list nil t nil nil (car (last supreme-brackets-replace--change-bracket-pairs-list))))))
 
   (let* ((bounds (if (use-region-p)
 		     (cons (region-beginning) (region-end))
@@ -736,8 +665,6 @@ If TO-CHARS is \"none...\", the brackets are replaced with empty strings."
 		(goto-char (point-min))
 		(while
 		    (re-search-forward
-		     ;; --- BUG FIX ---
-		     ;; Use non-greedy match-anything instead of negated char class
 		     (format "%s\\(.*?\\)%s"
 			     re-quoted-bracket
 			     re-quoted-bracket)
