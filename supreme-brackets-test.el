@@ -1,7 +1,7 @@
 ;;; supreme-brackets-test.el --- Tests for Supreme Brackets -*- lexical-binding: t -*-
 
 ;; Author: Javier Miranda
-;; Version: 1.0.0
+;; Version: 1.1.0
 ;; Keywords: convenience, editing, brackets
 ;; URL: https://github.com/J4VMC/supreme-brackets
 ;; Package-Requires: ((emacs "25.1"))
@@ -52,18 +52,21 @@
      (funcall ,mode)  ; Actually activate the mode properly
      ,@body))
 
-;;;; Core Tests (supreme-brackets.el)
+;;;; Core Tests
 
 (ert-deftest supreme-brackets-test-wrap-region ()
-  "Test wrapping an active region."
+  "Test wrapping an active region and ensures mark is deactivated."
   (supreme-brackets-test-with-mode 'text-mode
+				   (transient-mark-mode 1)
 				   (insert "hello")
 				   (goto-char (point-min))
 				   (set-mark (point))
 				   (goto-char (point-max)) ; Select "hello"
+				   (activate-mark)
 				   (supreme-brackets-wrap-with-brackets "(" ")")
 				   (should (string= (buffer-string) "(hello)"))
-				   (should (= (point) 2)))) ; Point should be at "(▮hello)" which is position 2
+				   (should (= (point) 2)) ; Point should be at "(▮hello)"
+				   (should (not (region-active-p))))) ; Mark should deactivate
 
 (ert-deftest supreme-brackets-test-wrap-word-at-point ()
   "Test wrapping the word at point."
@@ -133,6 +136,7 @@
 				   (goto-char (point-min))
 				   (set-mark (point))
 				   (goto-char (point-max)) ; Select "hello"
+				   (activate-mark)
 				   (supreme-brackets-insert-emacs-quotes)
 				   (should (string= (buffer-string) "`hello'"))
 				   (should (= (point) 2)) ; "`▮hello'"
@@ -143,11 +147,12 @@
 				   (goto-char (point-min))
 				   (set-mark (point))
 				   (goto-char (point-max)) ; Select "varname"
+				   (activate-mark)
 				   (supreme-brackets-insert-php-variable)
 				   (should (string= (buffer-string) "$varname"))
 				   (should (= (point) 2)))) ; "$▮varname"
 
-;;;; Deletion Tests (supreme-brackets-delete.el)
+;;;; Deletion Tests
 
 (ert-deftest supreme-brackets-test-smart-delete-backward-cases ()
   "Test supreme-brackets-smart-delete-backward in various contexts."
@@ -217,7 +222,7 @@
 				   (supreme-brackets-delete-forward-sexp-or-pairs t) ; t = pairs-only
 				   (should (string= (buffer-string) "world"))))
 
-;;;; Navigation Tests (supreme-brackets-nav.el)
+;;;; Navigation Tests
 
 (ert-deftest supreme-brackets-test-goto-matching-bracket ()
   "Test supreme-brackets-goto-matching-bracket."
@@ -236,8 +241,6 @@
 (ert-deftest supreme-brackets-test-select-delimiters-correct ()
   "Test supreme-brackets-select-text-in-delimiters."
   (supreme-brackets-test-with-mode 'text-mode
-				   ;; This tests the intended behavior based on the code's implementation
-				   ;; (which selects text *between* the nearest delimiters)
 				   (insert "foo(bar)baz")
 				   (goto-char 6) ; "foo(ba▮r)baz"
 				   (supreme-brackets-nav-select-text-in-delimiters)
@@ -262,7 +265,7 @@
 				   (supreme-brackets-nav-forward-right-bracket)
 				   (should (= (point) 12)))) ; "(a) [b] {c}▮" (after })
 
-;;;; Replacement Tests (supreme-brackets-replace.el)
+;;;; Replacement Tests
 
 (ert-deftest supreme-brackets-test-change-bracket-pairs-asymmetric ()
   "Test supreme-brackets-change-bracket-pairs for () -> []."
@@ -306,6 +309,19 @@
 				   (supreme-brackets-replace-change-bracket-pairs "paren ( )" "square [ ]")
 				   ;; Should only change the block "foo[bar]baz\n[more]"
 				   (should (string= (buffer-string) "first line\n\nfoo[bar]baz\n[more]\n\nlast line"))))
+
+(ert-deftest supreme-brackets-test-change-bracket-pairs-interactive ()
+  "Test interactive form of change-bracket-pairs to ensure no void-variable is thrown."
+  (supreme-brackets-test-with-mode 'text-mode
+				   (insert "(hello)")
+				   (goto-char 2)
+				   (cl-letf (((symbol-function 'completing-read)
+					      (lambda (prompt &rest _args)
+						(if (string-match-p "Replace this" prompt)
+						    "paren ( )"
+						  "square [ ]"))))
+				     (call-interactively 'supreme-brackets-replace-change-bracket-pairs))
+				   (should (string= (buffer-string) "[hello]"))))
 
 (provide 'supreme-brackets-test)
 
